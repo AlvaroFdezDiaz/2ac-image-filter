@@ -14,9 +14,12 @@ using namespace cimg_library;
 // Data type for image components
 // FIXME: Change this type according to your group assignment
 typedef double data_t; //Double por que lo especificaba el enunciado
-
-const char* SOURCE_IMG      = "bailarina.bmp";
-const char* DESTINATION_IMG = "bailarina2.bmp";
+//Imagen original
+const char* SOURCE_IMG      = "../Photos/bailarina.bmp";
+//Imagen con degradado
+const char* SOURCE_IMG2      = "../Photos/background_bw_l_6.bmp";
+//Destino final de la imagen 
+const char* DESTINATION_IMG = "../Photos/bailarina2.bmp";
 
 // Filter argument data type
 typedef struct {
@@ -37,7 +40,7 @@ typedef struct {
  * TO BE REPLACED BY YOUR ALGORITHM
  * 		
  * *********************************************/
-void filter (filter_args_t args) {
+void filter (filter_args_t args,filter_args_t args2) {
 	/************************************************
 	 * FIXME: Algorithm.
 	 * In this example, the algorithm is a components swap
@@ -49,20 +52,23 @@ void filter (filter_args_t args) {
 		*(args.pBdst + i) = *(args.pRsrc + i);
 	}
 	*/
-	//Aqui comienza el algoritmo Problema: 12 blacken mode: Falta añádir una segunda lecura de imagen para guntar la imagen 1 y 2
+	//Aqui comienza el algoritmo Problema: 12 blacken mode:
 	for (uint i = 0; i < args.pixelCount; i++) {
-		args.pRdst = 255 - (256 * (255 - args.pRsrc2???)/args.pRsrc+1);
-		args.pGdst = 255 - (256 * (255 - args.pGsrc2???)/args.pGsrc+1);
-		args.pBdst = 255 - (256 * (255 - args.pBsrc2???)/args.pBsrc+1);
+		args.pRdst = 255 - (256 * (255 - args2.pRsrc)/args.pRsrc+1);
+		args.pGdst = 255 - (256 * (255 - args2.pGsrc2)/args.pGsrc+1);
+		args.pBdst = 255 - (256 * (255 - args2.pBsrc2)/args.pBsrc+1);
 	}
 }
 
 int main() {
 	// Open file and object initialization
 	CImg<data_t> srcImage(SOURCE_IMG);
+	CImg<data_t> srcImage2(SOURCE_IMG2);
 
 	filter_args_t filter_args;
+	filter_args_t filter_args2;
 	data_t *pDstImage; // Pointer to the new image pixels
+	data_t *pDstImage2;
 
 
 	/***************************************************
@@ -72,6 +78,7 @@ int main() {
 	 */
 
 	srcImage.display(); // Displays the source image
+	srcImage2.display();
 	uint width = srcImage.width();// Getting information from the source image
 	uint height = srcImage.height();	
 	uint nComp = srcImage.spectrum();// source image number of components
@@ -79,13 +86,24 @@ int main() {
 				//  B&W images = 1
 				//	Normal color images = 3 (RGB)
 				//  Special color images = 4 (RGB and alpha/transparency channel)
+	//Segunda imagen
+	uint width2 = srcImage2.width();
+	uint height2 = srcImage2.height();
+	uint nComp2 = srcImage2.spectrum();
 
 	// Calculating image size in pixels
 	filter_args.pixelCount = width * height;
+	filter_args2.pixelCount = width2 * height2;
 	
 	// Allocate memory space for destination image components
 	pDstImage = (data_t *) malloc (filter_args.pixelCount * nComp * sizeof(data_t));
 	if (pDstImage == NULL) {
+		perror("Allocating destination image");
+		exit(-2);
+	}
+	//Segunda imagen
+	pDstImage2 = (data_t *) malloc (filter_args2.pixelCount * nComp2 * sizeof(data_t));
+	if (pDstImage2 == NULL) {
 		perror("Allocating destination image");
 		exit(-2);
 	}
@@ -94,7 +112,10 @@ int main() {
 	filter_args.pRsrc = srcImage.data(); // pRcomp points to the R component array
 	filter_args.pGsrc = filter_args.pRsrc + filter_args.pixelCount; // pGcomp points to the G component array
 	filter_args.pBsrc = filter_args.pGsrc + filter_args.pixelCount; // pBcomp points to B component array
-	
+	//Segunda imagen
+	filter_args2.pRsrc2 = srcImage2.data();
+	filter_args2.pGsrc2 = filter_args2.pRsrc2 + filter_args2.pixelCount;
+	filter_args2.pBsrc2 = filter_args2.pGsrc2 + filter_args2.pixelCount;
 	// Pointers to the RGB arrays of the destination image
 	filter_args.pRdst = pDstImage;
 	filter_args.pGdst = filter_args.pRdst + filter_args.pixelCount;
@@ -114,7 +135,7 @@ int main() {
 	/************************************************
 	 * Algorithm.
 	 */
-	filter(filter_args);
+	filter(filter_args,filter_args2);
 
 
 	/***********************************************
