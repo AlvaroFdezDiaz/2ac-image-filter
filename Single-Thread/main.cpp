@@ -7,12 +7,13 @@
 #include <stdio.h>
 #include <math.h>
 #include <CImg.h>
+#include <time.h> //Añadido para medir el tiempo
 
 using namespace cimg_library;
 
 // Data type for image components
 // FIXME: Change this type according to your group assignment
-typedef float data_t;
+typedef double data_t; //Double por que lo especificaba el enunciado
 
 const char* SOURCE_IMG      = "bailarina.bmp";
 const char* DESTINATION_IMG = "bailarina2.bmp";
@@ -42,13 +43,18 @@ void filter (filter_args_t args) {
 	 * In this example, the algorithm is a components swap
 	 *
 	 * TO BE REPLACED BY YOUR ALGORITHM
-	 */
     for (uint i = 0; i < args.pixelCount; i++) {
 		*(args.pRdst + i) = *(args.pGsrc + i);  // This is equals to pRdest[i] = pGsrc[i]
 		*(args.pGdst + i) = *(args.pBsrc + i);
 		*(args.pBdst + i) = *(args.pRsrc + i);
 	}
-
+	*/
+	//Aqui comienza el algoritmo Problema: 12 blacken mode: Falta añádir una segunda lecura de imagen para guntar la imagen 1 y 2
+	for (uint i = 0; i < args.pixelCount; i++) {
+		args.pRdst = 255 - (256 * (255 - args.pRsrc2???)/args.pRsrc+1);
+		args.pGdst = 255 - (256 * (255 - args.pGsrc2???)/args.pGsrc+1);
+		args.pBdst = 255 - (256 * (255 - args.pBsrc2???)/args.pBsrc+1);
+	}
 }
 
 int main() {
@@ -93,12 +99,16 @@ int main() {
 	filter_args.pRdst = pDstImage;
 	filter_args.pGdst = filter_args.pRdst + filter_args.pixelCount;
 	filter_args.pBdst = filter_args.pGdst + filter_args.pixelCount;
+	// Variables para el tiempo
+	struct timespec tStart, tEnd;
+    double dElapsedTimeS;
 
 
 	/***********************************************
 	 * TODO: Algorithm start.
 	 *   - Measure initial time
 	 */
+	clock_gettime(CLOCK_REALTIME, &tStart);  //Inicio del tiempo
 
 
 	/************************************************
@@ -112,7 +122,10 @@ int main() {
 	 *   - Measure the end time
 	 *   - Calculate the elapsed time
 	 */
-
+	clock_gettime(CLOCK_REALTIME, &tEnd);  //Fin del tiempo
+	//Cálculo del tiempo transcurrido
+	dElapsedTimeS = (tEnd.tv_sec - tStart.tv_sec);
+    dElapsedTimeS += (tEnd.tv_nsec - tStart.tv_nsec) / 1e+9;
 		
 	// Create a new image object with the calculated pixels
 	// In case of normal color images use nComp=3,
