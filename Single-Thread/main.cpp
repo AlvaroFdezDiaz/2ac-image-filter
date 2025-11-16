@@ -54,9 +54,9 @@ void filter (filter_args_t args,filter_args_t args2) {
 	*/
 	//Aqui comienza el algoritmo Problema: 12 blacken mode:
 	for (uint i = 0; i < args.pixelCount; i++) {
-		args.pRdst[i] = 255 - (256 * (255 - args2.pRsrc[i])/(args.pRsrc[i]+1));
-		args.pGdst[i] = 255 - (256 * (255 - args2.pGsrc[i])/(args.pGsrc[i]+1));
-		args.pBdst[i] = 255 - (256 * (255 - args2.pBsrc[i])/(args.pBsrc[i]+1));
+		*(args.pRdst + i) = 255 - (256 * (255 - *(args2.pGsrc + i))/(*(args.pGsrc + i)+1));
+		*(args.pGdst + i) = 255 - (256 * (255 - *(args2.pBsrc + i))/(*(args.pBsrc + i)+1));
+		*(args.pBdst + i) = 255 - (256 * (255 - *(args2.pRsrc + i))/(*(args.pRsrc + i)+1));
 	}
 }
 
