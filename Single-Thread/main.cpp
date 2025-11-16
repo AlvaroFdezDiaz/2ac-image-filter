@@ -54,9 +54,9 @@ void filter (filter_args_t args,filter_args_t args2) {
 	*/
 	//Aqui comienza el algoritmo Problema: 12 blacken mode:
 	for (uint i = 0; i < args.pixelCount; i++) {
-		args.pRdst = 255 - (256 * (255 - args2.pRsrc)/args.pRsrc+1);
-		args.pGdst = 255 - (256 * (255 - args2.pGsrc2)/args.pGsrc+1);
-		args.pBdst = 255 - (256 * (255 - args2.pBsrc2)/args.pBsrc+1);
+		args.pRdst[i] = 255 - (256 * (255 - args2.pRsrc[i])/(args.pRsrc[i]+1));
+		args.pGdst[i] = 255 - (256 * (255 - args2.pGsrc[i])/(args.pGsrc[i]+1));
+		args.pBdst[i] = 255 - (256 * (255 - args2.pBsrc[i])/(args.pBsrc[i]+1));
 	}
 }
 
@@ -113,9 +113,9 @@ int main() {
 	filter_args.pGsrc = filter_args.pRsrc + filter_args.pixelCount; // pGcomp points to the G component array
 	filter_args.pBsrc = filter_args.pGsrc + filter_args.pixelCount; // pBcomp points to B component array
 	//Segunda imagen
-	filter_args2.pRsrc2 = srcImage2.data();
-	filter_args2.pGsrc2 = filter_args2.pRsrc2 + filter_args2.pixelCount;
-	filter_args2.pBsrc2 = filter_args2.pGsrc2 + filter_args2.pixelCount;
+	filter_args2.pRsrc = srcImage2.data();
+	filter_args2.pGsrc = filter_args2.pRsrc + filter_args2.pixelCount;
+	filter_args2.pBsrc = filter_args2.pGsrc + filter_args2.pixelCount;
 	// Pointers to the RGB arrays of the destination image
 	filter_args.pRdst = pDstImage;
 	filter_args.pGdst = filter_args.pRdst + filter_args.pixelCount;
