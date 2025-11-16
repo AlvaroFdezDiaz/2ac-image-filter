@@ -15,11 +15,11 @@ using namespace cimg_library;
 // FIXME: Change this type according to your group assignment
 typedef double data_t; //Double por que lo especificaba el enunciado
 //Imagen original
-const char* SOURCE_IMG      = "../Photos/bailarina.bmp";
+const char* SOURCE_IMG      = "../Photos/normal/bailarina.bmp";
 //Imagen con degradado
-const char* SOURCE_IMG2      = "../Photos/background_bw_l_6.bmp";
+const char* SOURCE_IMG2      = "../Photos/backgrounds/background_V.bmp";
 //Destino final de la imagen 
-const char* DESTINATION_IMG = "../Photos/bailarina2.bmp";
+const char* DESTINATION_IMG = "../Photos/normal/bailarina_con_filtro.bmp";
 
 // Filter argument data type
 typedef struct {
@@ -91,6 +91,12 @@ int main() {
 	uint height2 = srcImage2.height();
 	uint nComp2 = srcImage2.spectrum();
 
+	//Comprobación sobre el tamaño de las imágenes
+	if (width != width2 || height != height2 || nComp != nComp2) {
+		printf("Error: Not same size images");
+		return(-1);
+	}
+
 	// Calculating image size in pixels
 	filter_args.pixelCount = width * height;
 	filter_args2.pixelCount = width2 * height2;
@@ -145,8 +151,7 @@ int main() {
 	 */
 	clock_gettime(CLOCK_REALTIME, &tEnd);  //Fin del tiempo
 	//Cálculo del tiempo transcurrido
-	dElapsedTimeS = (tEnd.tv_sec - tStart.tv_sec);
-    dElapsedTimeS += (tEnd.tv_nsec - tStart.tv_nsec) / 1e+9;
+	dElapsedTimeS = (tEnd.tv_sec - tStart.tv_sec) + (tEnd.tv_nsec - tStart.tv_nsec) / 1e+9;
 		
 	// Create a new image object with the calculated pixels
 	// In case of normal color images use nComp=3,
