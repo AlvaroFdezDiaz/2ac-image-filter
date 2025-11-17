@@ -1,7 +1,8 @@
 /*
- * Main.cpp
- *
- *  Created on: Fall 2019
+ * mainNoDisplay.cpp
+ * Modificación para la ejecución sin display de las imágenes para compatibilidad
+ *  Created on: Fall 2025
+ *  
  */
 
 #include <stdio.h>
@@ -72,8 +73,6 @@ int main() {
 	data_t *pDstImage; // Pointer to the new image pixels
 	data_t *pDstImage2;
 
-	srcImage.display(); // Displays the source image
-	srcImage2.display();
 	uint width = srcImage.width();// Getting information from the source image
 	uint height = srcImage.height();	
 	uint nComp = srcImage.spectrum();// source image number of components
@@ -145,9 +144,6 @@ int main() {
 
 	// Store destination image in disk
 	dstImage.save(DESTINATION_IMG); 
-
-	// Display destination image
-	dstImage.display();
 	
 	// Free memory
 	free(pDstImage);
