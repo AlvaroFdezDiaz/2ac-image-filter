@@ -1,85 +1,168 @@
-/*
- * Main.cpp
- *
- *  Created on: Fall 2019
- */
-
+#include <immintrin.h>
+#include <stdlib.h>
 #include <stdio.h>
-#include <immintrin.h> // Required to use intrinsic functions
+#include <math.h>
+#include "CImg.h"
+#include <time.h> //Añadido para medir el tiempo
 
+using namespace cimg_library;
 
-// TODO: Example of use of intrinsic functions
-// This example doesn't include any code about image processing
+#define ITEMS_PER_PACKET (sizeof(__m256)/sizeof(data_t))
 
+// Data type for image components
+typedef float data_t; // Cambiado a tipo de dato double
+//Imagen original
+const char* SOURCE_IMG      = "../Photos/normal/bailarina.bmp";
+//Imagen con degradado
+const char* SOURCE_IMG2      = "../Photos/backgrounds/background_V.bmp";
+//Destino final de la imagen 
+const char* DESTINATION_IMG = "../Photos/processed/bailarina_con_filtro_monohilo.bmp";
 
-#define VECTOR_SIZE       18 // Array size. Note: It is not a multiple of 8
-#define ITEMS_PER_PACKET (sizeof(__m256)/sizeof(float))
+typedef struct {
+    data_t *pRsrc;
+    data_t *pGsrc;
+    data_t *pBsrc;
+    data_t *pRdst;
+    data_t *pGdst;
+    data_t *pBdst;
+    int pixelCount;
+} filter_args_t;
 
+/** Algoritmo para el filtro darken (#12) en versión SIMD
+*/
+void filter(filter_args_t args, filter_args_t args2) {
+    int simdIterations = args.pixelCount / ITEMS_PER_PACKET;
+    int seqIterations = args.pixelCount % ITEMS_PER_PACKET;
+
+    __m256 num0 = _mm256_set1_ps(0);
+    __m256 num1 = _mm256_set1_ps(1.0);
+    __m256 num255 = _mm256_set1_ps(255.0);
+    __m256 num256 = _mm256_set1_ps(256.0);
+    __m256 vRsrc, vGsrc, vBsrc;
+    __m256 vRsrc2, vGsrc2, vBsrc2;
+    __m256 vRres, vGres, vBres;
+
+    for(int i = 0; i < simdIterations; i++) {
+        vRsrc = _mm256_loadu_ps(args.pRsrc + (i * ITEMS_PER_PACKET));
+        vGsrc = _mm256_loadu_ps(args.pGsrc + (i * ITEMS_PER_PACKET));
+        vBsrc = _mm256_loadu_ps(args.pBsrc + (i * ITEMS_PER_PACKET));
+        vRsrc2 = _mm256_loadu_ps(args2.pRsrc + (i * ITEMS_PER_PACKET));
+        vGsrc2 = _mm256_loadu_ps(args2.pGsrc + (i * ITEMS_PER_PACKET));
+        vBsrc2 = _mm256_loadu_ps(args2.pBsrc + (i * ITEMS_PER_PACKET));
+        
+        vRres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vRsrc2));
+        vRres = _mm256_div_ps(vRres, _mm256_add_ps(vRsrc, num1));
+        vRres = _mm256_sub_ps(num255, vRres);
+        vRres = _mm256_max_ps(num0, vRres);
+        vRres = _mm256_min_ps(num255, vRres);
+        
+        vGres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vGsrc2));
+        vGres = _mm256_div_ps(vGres, _mm256_add_ps(vGsrc, num1));
+        vGres = _mm256_sub_ps(num255, vGres);
+        vGres = _mm256_max_ps(num0, vGres);
+        vGres = _mm256_min_ps(num255, vGres);
+
+        vBres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vBsrc2));
+        vBres = _mm256_div_ps(vBres, _mm256_add_ps(vBsrc, num1));
+        vBres = _mm256_sub_ps(num255, vBres);
+        vBres = _mm256_max_ps(num0, vBres);
+        vBres = _mm256_min_ps(num255, vBres);
+
+        _mm256_storeu_ps(args.pRdst + (i * ITEMS_PER_PACKET), vRres);
+        _mm256_storeu_ps(args.pGdst + (i * ITEMS_PER_PACKET), vGres);
+        _mm256_storeu_ps(args.pGdst + (i * ITEMS_PER_PACKET), vBres);
+    }
+}
 
 int main() {
+	// Open file and object initialization
+	CImg<data_t> srcImage(SOURCE_IMG);
+	CImg<data_t> srcImage2(SOURCE_IMG2);
 
-	// Data arrays to sum. May be or not memory aligned to __m256 size (32 bytes)
-    float a[VECTOR_SIZE], b[VECTOR_SIZE];
+	filter_args_t filter_args;
+	filter_args_t filter_args2;
+	data_t *pDstImage; // Pointer to the new image pixels
+	data_t *pDstImage2;
 
-    // Calculation of the size of the resulting array
-    // How many 256 bit packets fit in the array?
-    int nPackets = (VECTOR_SIZE * sizeof(float)/sizeof(__m256));
-   
-    // Create an array aligned to 32 bytes (256 bits) memory boundaries to store the sum.
-    // Aligned memory access improves performance    
-    float *c = (float *)_mm_malloc(sizeof(float) * VECTOR_SIZE, sizeof(__m256));
+	// srcImage.display(); // Displays the source image
+	// srcImage2.display();
+	uint width = srcImage.width();// Getting information from the source image
+	uint height = srcImage.height();	
+	uint nComp = srcImage.spectrum();// source image number of components
+	         // Common values for spectrum (number of image components):
+				//  B&W images = 1
+				//	Normal color images = 3 (RGB)
+				//  Special color images = 4 (RGB and alpha/transparency channel)
+	//Segunda imagen
+	uint width2 = srcImage2.width();
+	uint height2 = srcImage2.height();
+	uint nComp2 = srcImage2.spectrum();
 
-    // 32 bytes (256 bits) packets. Used to stored aligned memory data
-    __m256 va, vb; 
-
-    // Initialize data arrays
-    for (int i = 0; i < VECTOR_SIZE; i++) {
-        *(a + i) = (float) i;       // a =  0, 1, 2, 3, …
-        *(b + i) = (float) (2 * i); // b =  0, 2, 4, 6, …
-    }
-
-    // Set the initial c element's value to -1 using vector extensions
-    *(__m256 *) c = _mm256_set1_ps(-1);
-    *(__m256 *)(c + ITEMS_PER_PACKET)     = _mm256_set1_ps(-1);
-    *(__m256 *)(c + ITEMS_PER_PACKET * 2) = _mm256_set1_ps(-1);
-
-    // Data arrays a and b must not be memory aligned to __m256 data (32 bytes)
-    // so we use intermediate variables to avoid execution errors.
-    // We make an unaligned load of va and vb
-    va = _mm256_loadu_ps(a);      // va = a[0][1]…[7] = 0, 1, 2, 3,  4,  5,  6,  7
-    vb = _mm256_loadu_ps(b);      // vb = b[0][1]…[7] = 0, 2, 4, 6,  8, 10, 12, 14
-    
-    // Performs the addition of two aligned vectors, each vector containing 8 floats
-    *(__m256 *)c = _mm256_add_ps(va, vb);// c = c[0][1]…[7] = 0, 3, 6, 9, 12, 15, 18, 21
-
-    // Next packet
-    // va = a[8][9]…[15] =  8,  9, 10, 11, 12, 13, 14, 15
-    // vb = b[8][9]…[15] = 16, 18, 20, 22, 24, 26, 28, 30
-    //  c = c[8][9]…[15] = 24, 27, 30, 33, 36, 39, 42, 45
-    va = _mm256_loadu_ps((a + ITEMS_PER_PACKET)); 
-    vb = _mm256_loadu_ps((b + ITEMS_PER_PACKET)); 
-    *(__m256 *)(c + ITEMS_PER_PACKET) = _mm256_add_ps(va, vb);
-
-    // If vectors va and vb have not a number of elements multiple of ITEMS_PER_PACKET 
-    // it is necessary to differentiate the last iteration. 
-
-    // Calculation of the elements in va and vb in excess
-    int dataInExcess = (VECTOR_SIZE)%(sizeof(__m256)/sizeof(float));
-
-    // Surplus data can be processed sequentially
-    
-    for (int i =0; i< dataInExcess; i++){
-        *(c + 2 * ITEMS_PER_PACKET + i) = *(a + 2 * ITEMS_PER_PACKET + i) + *(b + 2 * ITEMS_PER_PACKET + i);
-    }
-    
-    // Print resulting data from array addition
-    for (int i = 0; i < VECTOR_SIZE; i++) {
-        printf("\nc[%d]: %f", i, *(c + i));
+	//Comprobación sobre el tamaño de las imágenes
+	if (width != width2 || height != height2 || nComp != nComp2) {
+		printf("Error: Not same size images");
+		return(-1);
 	}
-  
-    // Free memory allocated using _mm_malloc
-    // It has to be freed with _mm_free
-    _mm_free(c);
+
+	// Calculating image size in pixels
+	filter_args.pixelCount = width * height;
+	filter_args2.pixelCount = width2 * height2;
+	
+	// Allocate memory space for destination image components
+	pDstImage = (data_t *) malloc (filter_args.pixelCount * nComp * sizeof(data_t));
+	if (pDstImage == NULL) {
+		perror("Allocating destination image");
+		exit(-2);
+	}
+	//Segunda imagen
+	pDstImage2 = (data_t *) malloc (filter_args2.pixelCount * nComp2 * sizeof(data_t));
+	if (pDstImage2 == NULL) {
+		perror("Allocating destination image");
+		exit(-2);
+	}
+
+	// Pointers to the componet arrays of the source image
+	filter_args.pRsrc = srcImage.data(); // pRcomp points to the R component array
+	filter_args.pGsrc = filter_args.pRsrc + filter_args.pixelCount; // pGcomp points to the G component array
+	filter_args.pBsrc = filter_args.pGsrc + filter_args.pixelCount; // pBcomp points to B component array
+	//Segunda imagen
+	filter_args2.pRsrc = srcImage2.data();
+	filter_args2.pGsrc = filter_args2.pRsrc + filter_args2.pixelCount;
+	filter_args2.pBsrc = filter_args2.pGsrc + filter_args2.pixelCount;
+	// Pointers to the RGB arrays of the destination image
+	filter_args.pRdst = pDstImage;
+	filter_args.pGdst = filter_args.pRdst + filter_args.pixelCount;
+	filter_args.pBdst = filter_args.pGdst + filter_args.pixelCount;
+	// Variables para el tiempo
+	struct timespec tStart, tEnd;
+    double dElapsedTimeS;
+
+
+	clock_gettime(CLOCK_REALTIME, &tStart);  // Inicio del contador de tiempo de ejecución
+
+	/************************************************
+	 * Algorithm.
+	 */
+	filter(filter_args,filter_args2);
+
+	clock_gettime(CLOCK_REALTIME, &tEnd);  // Fin del contador de tiempo de ejecución
+
+	//Cálculo del tiempo transcurrido
+	dElapsedTimeS = (tEnd.tv_sec - tStart.tv_sec) + (tEnd.tv_nsec - tStart.tv_nsec) / 1e+9;
+		
+	// Create a new image object with the calculated pixels
+	// In case of normal color images use nComp=3,
+	// In case of B/W images use nComp=1.
+	CImg<data_t> dstImage(pDstImage, width, height, 1, nComp);
+
+	// Store destination image in disk
+	dstImage.save(DESTINATION_IMG); 
+
+	// Display destination image
+	// dstImage.display();
+	
+	// Free memory
+	free(pDstImage);
 
 	return 0;
 }
