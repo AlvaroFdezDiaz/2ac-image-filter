@@ -10,6 +10,7 @@
 #include <CImg.h>
 
 using namespace cimg_library;
+#define NUM_THREADS 4;
 
 // Data type for image components
 // FIXME: Change this type according to your group assignment
@@ -101,6 +102,8 @@ int main() {
 	// Variables para el tiempo
 	struct timespec tStart, tEnd;
     double dElapsedTimeS;
+	// Calculamos cuántos píxeles le tocan a cada hilo
+	uint pixelsPerThread = mis_args.pixelCount / NUM_THREADS;
 
 	/***********************************************
 	 * TODO: Algorithm start.
@@ -111,11 +114,23 @@ int main() {
 	/************************************************
 	 * TODO: Algorithm.
 	 */
-		for (uint i = 0; i < args.pixelCount; i++) {
-		*(args.pRdst + i) = 255 - (256 * (255 - *(args2.pGsrc + i))/(*(args.pGsrc + i)+1));
-		*(args.pGdst + i) = 255 - (256 * (255 - *(args2.pBsrc + i))/(*(args.pBsrc + i)+1));
-		*(args.pBdst + i) = 255 - (256 * (255 - *(args2.pRsrc + i))/(*(args.pRsrc + i)+1));
-	}
+	for (int i = 0; i < NUM_THREADS; i++) {
+    thread_data[i].args1 = filter_args;   //Copiamos los punteros originales
+    thread_data[i].args2 = filter_args2;
+    
+    // Calculamos el rango
+    thread_data[i].start = i * pixelsPerThread;
+    
+    // Comprovamos por si la division no es exacta
+    if (i == NUM_THREADS - 1) {
+        thread_data[i].end = filter_args.pixelCount;
+    } else {
+        thread_data[i].end = (i + 1) * pixelsPerThread;
+    }
+
+    // Lanzamos el hilo
+    pthread_create(&threads[i], NULL, thread_filter, &thread_data[i]);
+}
 
 
 	/***********************************************
@@ -143,9 +158,21 @@ int main() {
 
 	return 0;
 }
-void* NombreDeTuFuncion(void* arg) {
-    // --- AQUÍ PONES TU LÓGICA ---
-    // El código que pongas aquí se ejecutará en paralelo.
-    
-    return NULL; 
+void* thread_filter(void* arg) {
+    // 1. Desempaquetar (Cast)
+    ThreadData* data = (ThreadData*)arg;
+
+    // Extraemos variables para que el código sea más legible (opcional)
+    filter_args_t a1 = data->args1;
+    filter_args_t a2 = data->args2;
+
+    for (uint i = data->start; i < data->end; i++) {
+        
+        *(a1.pRdst + i) = 255 - (256 * (255 - *(a2.pGsrc + i))/(*(a1.pGsrc + i)+1));
+        *(a1.pGdst + i) = 255 - (256 * (255 - *(a2.pBsrc + i))/(*(a1.pBsrc + i)+1));
+        *(a1.pBdst + i) = 255 - (256 * (255 - *(a2.pRsrc + i))/(*(a1.pRsrc + i)+1));
+        
+    }
+
+    return NULL;
 }
