@@ -19,7 +19,7 @@ const char* SOURCE_IMG      = "../Photos/normal/bailarina.bmp";
 //Imagen con degradado
 const char* SOURCE_IMG2      = "../Photos/backgrounds/background_V.bmp";
 //Destino final de la imagen 
-const char* DESTINATION_IMG = "../Photos/processed/bailarina_con_filtro_monohilo.bmp";
+const char* DESTINATION_IMG = "../Photos/processed/filter_monothread.bmp";
 
 int saturationControl(int x, int y);
 
