@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <CImg.h>
+#include "CImg.h"
 #include <time.h> //Añadido para medir el tiempo
 
 using namespace cimg_library;
