@@ -10,7 +10,7 @@ using namespace cimg_library;
 #define ITEMS_PER_PACKET (sizeof(__m256)/sizeof(data_t))
 
 // Data type for image components
-typedef float data_t; // Cambiado a tipo de dato double
+typedef float data_t;
 //Imagen original
 const char* SOURCE_IMG      = "../Photos/normal/bailarina.bmp";
 //Imagen con degradado
@@ -107,9 +107,9 @@ int main() {
 	// Calculating image size in pixels
 	filter_args.pixelCount = width * height;
 	filter_args2.pixelCount = width2 * height2;
-	
+
 	// Allocate memory space for destination image components
-	pDstImage = (data_t *) malloc (filter_args.pixelCount * nComp * sizeof(data_t));
+	pDstImage = (data_t *)_mm_malloc(filter_args.pixelCount * nComp * sizeof(data_t), sizeof(__m256));
 	if (pDstImage == NULL) {
 		perror("Allocating destination image");
 		exit(-2);
@@ -162,7 +162,7 @@ int main() {
 	// dstImage.display();
 	
 	// Free memory
-	free(pDstImage);
+	_mm_free(pDstImage);
 
 	return 0;
 }
