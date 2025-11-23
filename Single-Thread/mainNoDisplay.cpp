@@ -71,7 +71,6 @@ int main() {
 	filter_args_t filter_args;
 	filter_args_t filter_args2;
 	data_t *pDstImage; // Pointer to the new image pixels
-	data_t *pDstImage2;
 
 	uint width = srcImage.width();// Getting information from the source image
 	uint height = srcImage.height();	
@@ -98,12 +97,6 @@ int main() {
 	// Allocate memory space for destination image components
 	pDstImage = (data_t *) malloc (filter_args.pixelCount * nComp * sizeof(data_t));
 	if (pDstImage == NULL) {
-		perror("Allocating destination image");
-		exit(-2);
-	}
-	//Segunda imagen
-	pDstImage2 = (data_t *) malloc (filter_args2.pixelCount * nComp2 * sizeof(data_t));
-	if (pDstImage2 == NULL) {
 		perror("Allocating destination image");
 		exit(-2);
 	}
@@ -144,7 +137,7 @@ int main() {
 
 	// Store destination image in disk
 	dstImage.save(DESTINATION_IMG); 
-	
+	printf("Total time: %f", dElapsedTimeS);
 	// Free memory
 	free(pDstImage);
 

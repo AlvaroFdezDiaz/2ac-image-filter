@@ -10,13 +10,13 @@ using namespace cimg_library;
 #define ITEMS_PER_PACKET (sizeof(__m256)/sizeof(data_t))
 
 // Data type for image components
-typedef float data_t; // Cambiado a tipo de dato double
+typedef float data_t;
 //Imagen original
 const char* SOURCE_IMG      = "../Photos/normal/bailarina.bmp";
 //Imagen con degradado
 const char* SOURCE_IMG2      = "../Photos/backgrounds/background_V.bmp";
 //Destino final de la imagen 
-const char* DESTINATION_IMG = "../Photos/processed/bailarina_con_filtro_monohilo.bmp";
+const char* DESTINATION_IMG = "../Photos/processed/filter_simd.bmp";
 
 typedef struct {
     data_t *pRsrc;
@@ -27,6 +27,18 @@ typedef struct {
     data_t *pBdst;
     int pixelCount;
 } filter_args_t;
+
+float saturationControl(float x, float y) {
+	float res = ((256 * (255 - y))/(x+1));
+
+	if(res > 255) {
+		res = 255;
+	} else if(res < 0) {
+		res = 0;
+	}
+
+	return res;
+}
 
 /** Algoritmo para el filtro darken (#12) en versión SIMD
 */
@@ -70,8 +82,17 @@ void filter(filter_args_t args, filter_args_t args2) {
 
         _mm256_storeu_ps(args.pRdst + (i * ITEMS_PER_PACKET), vRres);
         _mm256_storeu_ps(args.pGdst + (i * ITEMS_PER_PACKET), vGres);
-        _mm256_storeu_ps(args.pGdst + (i * ITEMS_PER_PACKET), vBres);
+        _mm256_storeu_ps(args.pBdst + (i * ITEMS_PER_PACKET), vBres);
     }
+
+	int simdOffset =  simdIterations * ITEMS_PER_PACKET;
+
+	for(int i = 0; i < seqIterations; i++) {
+		int start = simdOffset + i;
+		args.pRdst[start] = 255 - saturationControl(args.pRsrc[start], args2.pRsrc[start]);
+		args.pGdst[start] = 255 - saturationControl(args.pGsrc[start], args2.pGsrc[start]);
+		args.pBdst[start] = 255 - saturationControl(args.pBsrc[start], args2.pBsrc[start]);
+	}
 }
 
 int main() {
@@ -82,7 +103,6 @@ int main() {
 	filter_args_t filter_args;
 	filter_args_t filter_args2;
 	data_t *pDstImage; // Pointer to the new image pixels
-	data_t *pDstImage2;
 
 	// srcImage.display(); // Displays the source image
 	// srcImage2.display();
@@ -107,16 +127,10 @@ int main() {
 	// Calculating image size in pixels
 	filter_args.pixelCount = width * height;
 	filter_args2.pixelCount = width2 * height2;
-	
+
 	// Allocate memory space for destination image components
-	pDstImage = (data_t *) malloc (filter_args.pixelCount * nComp * sizeof(data_t));
+	pDstImage = (data_t *)_mm_malloc(filter_args.pixelCount * nComp * sizeof(data_t), sizeof(__m256));
 	if (pDstImage == NULL) {
-		perror("Allocating destination image");
-		exit(-2);
-	}
-	//Segunda imagen
-	pDstImage2 = (data_t *) malloc (filter_args2.pixelCount * nComp2 * sizeof(data_t));
-	if (pDstImage2 == NULL) {
 		perror("Allocating destination image");
 		exit(-2);
 	}
@@ -160,9 +174,9 @@ int main() {
 
 	// Display destination image
 	// dstImage.display();
-	
+	printf("Total time: %f", dElapsedTimeS);
 	// Free memory
-	free(pDstImage);
+	_mm_free(pDstImage);
 
 	return 0;
 }
