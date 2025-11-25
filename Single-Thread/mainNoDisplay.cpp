@@ -105,10 +105,12 @@ int main() {
 	filter_args.pRsrc = srcImage.data(); // pRcomp points to the R component array
 	filter_args.pGsrc = filter_args.pRsrc + filter_args.pixelCount; // pGcomp points to the G component array
 	filter_args.pBsrc = filter_args.pGsrc + filter_args.pixelCount; // pBcomp points to B component array
+	
 	//Segunda imagen
 	filter_args2.pRsrc = srcImage2.data();
 	filter_args2.pGsrc = filter_args2.pRsrc + filter_args2.pixelCount;
 	filter_args2.pBsrc = filter_args2.pGsrc + filter_args2.pixelCount;
+
 	// Pointers to the RGB arrays of the destination image
 	filter_args.pRdst = pDstImage;
 	filter_args.pGdst = filter_args.pRdst + filter_args.pixelCount;
