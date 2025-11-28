@@ -41,9 +41,9 @@ typedef struct {
  * *********************************************/
 void filter (filter_args_t args,filter_args_t args2) {
 	for (uint i = 0; i < args.pixelCount; i++) {
-		*(args.pRdst + i) = 255 - (256 * (255 - *(args2.pGsrc + i))/(*(args.pGsrc + i)+1));
-		*(args.pGdst + i) = 255 - (256 * (255 - *(args2.pBsrc + i))/(*(args.pBsrc + i)+1));
-		*(args.pBdst + i) = 255 - (256 * (255 - *(args2.pRsrc + i))/(*(args.pRsrc + i)+1));
+		args.pRdst[i] = 255 - saturationControl(args.pRsrc[i], args2.pRsrc[i]);
+		args.pGdst[i] = 255 - saturationControl(args.pGsrc[i], args2.pGsrc[i]);
+		args.pBdst[i] = 255 - saturationControl(args.pBsrc[i], args2.pBsrc[i]);
 	}
 }
 
