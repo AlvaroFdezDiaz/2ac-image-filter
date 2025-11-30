@@ -104,8 +104,9 @@ int main() {
 	filter_args_t filter_args2;
 	data_t *pDstImage; // Pointer to the new image pixels
 
-	// srcImage.display(); // Displays the source image
-	// srcImage2.display();
+	srcImage.display(); // Displays the source image
+	srcImage2.display();
+
 	uint width = srcImage.width();// Getting information from the source image
 	uint height = srcImage.height();	
 	uint nComp = srcImage.spectrum();// source image number of components
@@ -173,8 +174,11 @@ int main() {
 	dstImage.save(DESTINATION_IMG); 
 
 	// Display destination image
-	// dstImage.display();
-	printf("Total time: %f", dElapsedTimeS);
+	dstImage.display();
+
+	//Imprimir tiempo total de procesamiento
+	printf("Tiempo total de procesamiento: %.6f s\n", dElapsedTimeS);
+
 	// Free memory
 	_mm_free(pDstImage);
 

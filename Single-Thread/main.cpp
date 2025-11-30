@@ -70,7 +70,6 @@ int main() {
 	filter_args_t filter_args;
 	filter_args_t filter_args2;
 	data_t *pDstImage; // Pointer to the new image pixels
-	data_t *pDstImage2;
 
 	srcImage.display(); // Displays the source image
 	srcImage2.display();
@@ -145,6 +144,9 @@ int main() {
 	// Display destination image
 	dstImage.display();
 	
+	//Imprimir tiempo total de procesamiento
+	printf("Tiempo total de procesamiento: %.6f s\n", dElapsedTimeS);
+
 	// Free memory
 	free(pDstImage);
 
