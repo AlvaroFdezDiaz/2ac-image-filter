@@ -64,27 +64,27 @@ void filter(filter_args_t args, filter_args_t args2) {
         
         vRres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vRsrc2));
         vRres = _mm256_div_ps(vRres, _mm256_add_ps(vRsrc, num1));
-        vRres = _mm256_sub_ps(num255, vRres);
-        vRres = _mm256_max_ps(num0, vRres);
+		vRres = _mm256_max_ps(num0, vRres);
         vRres = _mm256_min_ps(num255, vRres);
+        vRres = _mm256_sub_ps(num255, vRres);
         
         vGres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vGsrc2));
         vGres = _mm256_div_ps(vGres, _mm256_add_ps(vGsrc, num1));
-        vGres = _mm256_sub_ps(num255, vGres);
-        vGres = _mm256_max_ps(num0, vGres);
+		vGres = _mm256_max_ps(num0, vGres);
         vGres = _mm256_min_ps(num255, vGres);
+        vGres = _mm256_sub_ps(num255, vGres);
 
         vBres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vBsrc2));
         vBres = _mm256_div_ps(vBres, _mm256_add_ps(vBsrc, num1));
-        vBres = _mm256_sub_ps(num255, vBres);
-        vBres = _mm256_max_ps(num0, vBres);
+		vBres = _mm256_max_ps(num0, vBres);
         vBres = _mm256_min_ps(num255, vBres);
+        vBres = _mm256_sub_ps(num255, vBres);
+
 
         _mm256_storeu_ps(args.pRdst + (i * ITEMS_PER_PACKET), vRres);
         _mm256_storeu_ps(args.pGdst + (i * ITEMS_PER_PACKET), vGres);
         _mm256_storeu_ps(args.pBdst + (i * ITEMS_PER_PACKET), vBres);
     }
-
 	int simdOffset =  simdIterations * ITEMS_PER_PACKET;
 
 	for(int i = 0; i < seqIterations; i++) {
