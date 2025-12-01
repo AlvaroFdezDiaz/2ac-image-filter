@@ -7,10 +7,10 @@
 
 using namespace cimg_library;
 
-#define ITEMS_PER_PACKET (sizeof(__m256)/sizeof(data_t))
+#define ITEMS_PER_PACKET (sizeof(__m256d)/sizeof(data_t))
 
 // Data type for image components
-typedef float data_t;
+typedef double data_t;
 //Imagen original
 const char* SOURCE_IMG      = "../Photos/normal/bailarina.bmp";
 //Imagen con degradado
@@ -28,8 +28,8 @@ typedef struct {
     int pixelCount;
 } filter_args_t;
 
-float saturationControl(float x, float y) {
-	float res = ((256 * (255 - y))/(x+1));
+int saturationControl(int x, int y) {
+	int res = ((256 * (255 - y))/(x+1));
 
 	if(res > 255) {
 		res = 255;
@@ -46,44 +46,69 @@ void filter(filter_args_t args, filter_args_t args2) {
     int simdIterations = args.pixelCount / ITEMS_PER_PACKET;
     int seqIterations = args.pixelCount % ITEMS_PER_PACKET;
 
-    __m256 num0 = _mm256_set1_ps(0);
-    __m256 num1 = _mm256_set1_ps(1.0);
-    __m256 num255 = _mm256_set1_ps(255.0);
-    __m256 num256 = _mm256_set1_ps(256.0);
-    __m256 vRsrc, vGsrc, vBsrc;
-    __m256 vRsrc2, vGsrc2, vBsrc2;
-    __m256 vRres, vGres, vBres;
+    __m256d num0 = _mm256_set1_pd(0);
+    __m256d num1 = _mm256_set1_pd(1.0);
+    __m256d num255 = _mm256_set1_pd(255.0);
+    __m256d num256 = _mm256_set1_pd(256.0);
+    __m256d vRsrc, vGsrc, vBsrc;
+    __m256d vRsrc2, vGsrc2, vBsrc2;
+    __m256d vRres, vGres, vBres;
 
     for(int i = 0; i < simdIterations; i++) {
-        vRsrc = _mm256_loadu_ps(args.pRsrc + (i * ITEMS_PER_PACKET));
-        vGsrc = _mm256_loadu_ps(args.pGsrc + (i * ITEMS_PER_PACKET));
-        vBsrc = _mm256_loadu_ps(args.pBsrc + (i * ITEMS_PER_PACKET));
-        vRsrc2 = _mm256_loadu_ps(args2.pRsrc + (i * ITEMS_PER_PACKET));
-        vGsrc2 = _mm256_loadu_ps(args2.pGsrc + (i * ITEMS_PER_PACKET));
-        vBsrc2 = _mm256_loadu_ps(args2.pBsrc + (i * ITEMS_PER_PACKET));
+        vRsrc = _mm256_loadu_pd(args.pRsrc + (i * ITEMS_PER_PACKET));
+        vGsrc = _mm256_loadu_pd(args.pGsrc + (i * ITEMS_PER_PACKET));
+        vBsrc = _mm256_loadu_pd(args.pBsrc + (i * ITEMS_PER_PACKET));
+        vRsrc2 = _mm256_loadu_pd(args2.pRsrc + (i * ITEMS_PER_PACKET));
+        vGsrc2 = _mm256_loadu_pd(args2.pGsrc + (i * ITEMS_PER_PACKET));
+        vBsrc2 = _mm256_loadu_pd(args2.pBsrc + (i * ITEMS_PER_PACKET));
         
-        vRres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vRsrc2));
-        vRres = _mm256_div_ps(vRres, _mm256_add_ps(vRsrc, num1));
-		vRres = _mm256_max_ps(num0, vRres);
-        vRres = _mm256_min_ps(num255, vRres);
-        vRres = _mm256_sub_ps(num255, vRres);
+		// realizamos la operación (256*(255 - y)) / (x + 1)
+        vRres = _mm256_mul_pd(num256, _mm256_sub_pd(num255, vRsrc2));
+        vRres = _mm256_div_pd(vRres, _mm256_add_pd(vRsrc, num1));
+		
+		//vRres = _mm256_max_pd(num0, vRres);
+        //vRres = _mm256_min_pd(num255, vRres);
+        //vRres = _mm256_sub_pd(num255, vRres);
         
-        vGres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vGsrc2));
-        vGres = _mm256_div_ps(vGres, _mm256_add_ps(vGsrc, num1));
-		vGres = _mm256_max_ps(num0, vGres);
-        vGres = _mm256_min_ps(num255, vGres);
-        vGres = _mm256_sub_ps(num255, vGres);
+        vGres = _mm256_mul_pd(num256, _mm256_sub_pd(num255, vGsrc2));
+        vGres = _mm256_div_pd(vGres, _mm256_add_pd(vGsrc, num1));
+		//vGres = _mm256_max_pd(num0, vGres);
+        //vGres = _mm256_min_pd(num255, vGres);
+        //vGres = _mm256_sub_pd(num255, vGres);
 
-        vBres = _mm256_mul_ps(num256, _mm256_sub_ps(num255, vBsrc2));
-        vBres = _mm256_div_ps(vBres, _mm256_add_ps(vBsrc, num1));
-		vBres = _mm256_max_ps(num0, vBres);
-        vBres = _mm256_min_ps(num255, vBres);
-        vBres = _mm256_sub_ps(num255, vBres);
+        vBres = _mm256_mul_pd(num256, _mm256_sub_pd(num255, vBsrc2));
+        vBres = _mm256_div_pd(vBres, _mm256_add_pd(vBsrc, num1));
+		//vBres = _mm256_max_pd(num0, vBres);
+        //vBres = _mm256_min_pd(num255, vBres);
+        //vBres = _mm256_sub_pd(num255, vBres);
 
+		// Truncamos hacia 0
+		vRres = _mm256_round_pd(vRres, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+		vGres = _mm256_round_pd(vGres, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+		vBres = _mm256_round_pd(vBres, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
 
-        _mm256_storeu_ps(args.pRdst + (i * ITEMS_PER_PACKET), vRres);
-        _mm256_storeu_ps(args.pGdst + (i * ITEMS_PER_PACKET), vGres);
-        _mm256_storeu_ps(args.pBdst + (i * ITEMS_PER_PACKET), vBres);
+		vRres = _mm256_max_pd(vRres, num0);
+        vRres = _mm256_min_pd(vRres, num255);
+		
+		vGres = _mm256_max_pd(vGres, num0);
+        vGres = _mm256_min_pd(vGres, num255);
+
+		vBres = _mm256_max_pd(vBres, num0);
+        vBres = _mm256_min_pd(vBres, num255);
+
+		// Ahora hacemos 255 - todo lo hecho
+		vRres = _mm256_sub_pd(num255, vRres);
+		vGres = _mm256_sub_pd(num255, vGres);
+		vBres = _mm256_sub_pd(num255, vBres);
+
+		// Guardar valores ya enteros (como double)
+		__m256d vRint = _mm256_round_pd(vRres, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+		__m256d vGint = _mm256_round_pd(vGres, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+		__m256d vBint = _mm256_round_pd(vBres, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+
+		_mm256_storeu_pd(args.pRdst + (i * ITEMS_PER_PACKET), vRint);
+		_mm256_storeu_pd(args.pGdst + (i * ITEMS_PER_PACKET), vGint);
+		_mm256_storeu_pd(args.pBdst + (i * ITEMS_PER_PACKET), vBint);
     }
 	int simdOffset =  simdIterations * ITEMS_PER_PACKET;
 
@@ -130,7 +155,7 @@ int main() {
 	filter_args2.pixelCount = width2 * height2;
 
 	// Allocate memory space for destination image components
-	pDstImage = (data_t *)_mm_malloc(filter_args.pixelCount * nComp * sizeof(data_t), sizeof(__m256));
+	pDstImage = (data_t *)_mm_malloc(filter_args.pixelCount * nComp * sizeof(data_t), sizeof(__m256d));
 	if (pDstImage == NULL) {
 		perror("Allocating destination image");
 		exit(-2);
