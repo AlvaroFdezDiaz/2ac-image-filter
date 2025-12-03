@@ -16,7 +16,7 @@ using namespace cimg_library;
 
 // Tipo de dato double
 typedef double data_t;
-// Imagen original
+// Ruta de imagen original
 const char *SOURCE_IMG = "../Photos/normal/bailarina.bmp";
 // Background
 const char *SOURCE_IMG2 = "../Photos/backgrounds/background_V.bmp";
